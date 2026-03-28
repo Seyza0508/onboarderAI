@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.db.models import Blocker, Task, User
-from app.db.schemas import ProgressResponse
+from app.db.schemas import BlockerRead, ProgressResponse
+from app.services.blocker_service import get_alternate_tasks_for_blocker_type
 
 
 router = APIRouter()
@@ -29,6 +30,27 @@ def get_progress(user_id: int, db: Session = Depends(get_db)) -> ProgressRespons
         .order_by(Blocker.created_at.desc())
     )
     recommended_next_action = current_blocker.recommended_action if current_blocker else None
+    recommended_alternate_tasks = (
+        get_alternate_tasks_for_blocker_type(current_blocker.blocker_type) if current_blocker else []
+    )
+
+    current_blocker_response = None
+    if current_blocker:
+        current_blocker_response = BlockerRead(
+            id=current_blocker.id,
+            user_id=current_blocker.user_id,
+            task_id=current_blocker.task_id,
+            blocker_type=current_blocker.blocker_type,
+            description=current_blocker.description,
+            severity=current_blocker.severity,
+            status=current_blocker.status,
+            recommended_action=current_blocker.recommended_action,
+            escalation_needed=current_blocker.escalation_needed,
+            classification_reason=None,
+            alternate_tasks=recommended_alternate_tasks,
+            created_at=current_blocker.created_at,
+            updated_at=current_blocker.updated_at,
+        )
 
     return ProgressResponse(
         user_id=user_id,
@@ -36,6 +58,7 @@ def get_progress(user_id: int, db: Session = Depends(get_db)) -> ProgressRespons
         completed_tasks=completed_tasks,
         blocked_tasks=blocked_tasks,
         pending_tasks=pending_tasks,
-        current_blocker=current_blocker,
+        current_blocker=current_blocker_response,
         recommended_next_action=recommended_next_action,
+        recommended_alternate_tasks=recommended_alternate_tasks,
     )

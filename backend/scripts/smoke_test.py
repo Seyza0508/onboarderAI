@@ -55,7 +55,35 @@ resp6 = c.post(f"/users/{uid}/plan/generate")
 assert resp6.json()["generated_task_count"] == 0
 print(f"Idempotent re-gen: {resp6.json()['message']}")
 
-# 7. Frontend engineer gets different plan
+# 7. Auto-classify blocker + recommendation
+first_task_id = tasks[0]["id"]
+blocker_resp = c.post(
+    f"/users/{uid}/blockers",
+    json={
+        "task_id": first_task_id,
+        "description": "I cannot access the payments repo and no invite has arrived yet.",
+        "severity": "high",
+    },
+)
+assert blocker_resp.status_code == 201, blocker_resp.text
+blocker_body = blocker_resp.json()
+print(
+    "Blocker classification:",
+    blocker_body["blocker_type"],
+    "| reason:",
+    blocker_body["classification_reason"],
+)
+print("Recommended action:", blocker_body["recommended_action"])
+print("Alternate tasks:", blocker_body["alternate_tasks"])
+
+progress_resp = c.get(f"/users/{uid}/progress")
+assert progress_resp.status_code == 200, progress_resp.text
+progress = progress_resp.json()
+assert progress["recommended_next_action"], "Expected recommended_next_action in progress"
+assert progress["recommended_alternate_tasks"], "Expected alternate tasks in progress"
+print("Progress recommendation:", progress["recommended_next_action"])
+
+# 8. Frontend engineer gets different plan
 resp7 = c.post("/users", json={
     "name": "Bob Frontend",
     "email": "bob@northstar.example",
@@ -72,7 +100,7 @@ print(f"Frontend engineer tasks ({len(tasks2)}):")
 for t in tasks2:
     print(f"  [{t['priority']}] {t['task_name']}")
 
-# 8. QA engineer gets fallback plan (no template for qa_engineer on payments)
+# 9. QA engineer gets fallback plan (no template for qa_engineer on payments)
 resp8 = c.post("/users", json={
     "name": "Carol QA",
     "email": "carol@northstar.example",

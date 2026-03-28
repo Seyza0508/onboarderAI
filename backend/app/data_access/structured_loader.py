@@ -32,6 +32,13 @@ def get_task_templates() -> list[dict]:
     return raw["templates"]
 
 
+@lru_cache(maxsize=1)
+def get_blocker_playbooks() -> dict[str, dict]:
+    """Return blocker playbooks keyed by blocker_type."""
+    raw = _load_json("blocker_playbooks.json")
+    return {entry["blocker_type"]: entry for entry in raw["blocker_categories"]}
+
+
 def find_matching_templates(role: str, team: str) -> list[dict]:
     """Find all task templates that match the given role and team."""
     return [t for t in get_task_templates() if t["role"] == role and t["team"] == team]

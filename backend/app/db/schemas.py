@@ -97,11 +97,11 @@ class ChatResponse(BaseModel):
 class BlockerCreate(BaseModel):
     task_id: int | None = None
     description: str
-    blocker_type: BlockerType
+    blocker_type: BlockerType | None = None
     severity: BlockerSeverity = "medium"
     status: BlockerStatus = "open"
     recommended_action: str | None = None
-    escalation_needed: bool = False
+    escalation_needed: bool | None = None
 
 
 class BlockerRead(BaseModel):
@@ -114,6 +114,8 @@ class BlockerRead(BaseModel):
     status: BlockerStatus
     recommended_action: str | None = None
     escalation_needed: bool
+    classification_reason: str | None = None
+    alternate_tasks: list[str] = []
     created_at: datetime
     updated_at: datetime
 
@@ -128,6 +130,7 @@ class ProgressResponse(BaseModel):
     pending_tasks: int
     current_blocker: BlockerRead | None
     recommended_next_action: str | None
+    recommended_alternate_tasks: list[str] = []
 
 
 class EscalationDraftRequest(BaseModel):
