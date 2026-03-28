@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.db.models import Blocker, Interaction, User
 from app.db.schemas import EscalationDraftRequest, EscalationDraftResponse
+from app.services.escalation_service import build_escalation_draft
 
 
 router = APIRouter()
@@ -31,20 +32,22 @@ def create_escalation_draft(
     if not blocker:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No blocker available to draft escalation")
 
-    draft_message = (
-        f"Hello team, I am {user.name} ({user.role} on {user.team}) and I am currently blocked.\n"
-        f"Blocker type: {blocker.blocker_type}\n"
-        f"Issue: {blocker.description}\n"
-        "What I tried: reviewed onboarding docs and attempted standard troubleshooting steps.\n"
-        f"Help needed: {blocker.recommended_action or 'guidance on next steps and owner routing'}.\n"
-        "Thank you."
+    draft = build_escalation_draft(
+        user=user,
+        blocker=blocker,
+        channel=payload.channel,
+        what_tried=payload.what_tried,
+        help_needed=payload.help_needed,
     )
 
     interaction = Interaction(
         user_id=user_id,
         interaction_type="escalation",
         user_message=f"Draft {payload.channel} escalation",
-        assistant_summary=f"Drafted escalation for blocker {blocker.id}",
+        assistant_summary=(
+            f"Drafted {payload.channel} escalation for blocker {blocker.id} "
+            f"to {draft.recipient_team} ({draft.recipient_owner})"
+        ),
     )
     db.add(interaction)
     db.commit()
@@ -53,5 +56,8 @@ def create_escalation_draft(
         user_id=user_id,
         blocker_id=blocker.id,
         channel=payload.channel,
-        draft_message=draft_message,
+        recipient_team=draft.recipient_team,
+        recipient_owner=draft.recipient_owner,
+        destination=draft.destination,
+        draft_message=draft.message,
     )

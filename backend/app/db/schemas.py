@@ -136,12 +136,17 @@ class ProgressResponse(BaseModel):
 class EscalationDraftRequest(BaseModel):
     blocker_id: int | None = None
     channel: Literal["slack", "email"] = "slack"
+    what_tried: list[str] = []
+    help_needed: str | None = None
 
 
 class EscalationDraftResponse(BaseModel):
     user_id: int
     blocker_id: int | None
     channel: Literal["slack", "email"]
+    recipient_team: str
+    recipient_owner: str
+    destination: str
     draft_message: str
 
 

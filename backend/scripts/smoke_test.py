@@ -83,7 +83,23 @@ assert progress["recommended_next_action"], "Expected recommended_next_action in
 assert progress["recommended_alternate_tasks"], "Expected alternate tasks in progress"
 print("Progress recommendation:", progress["recommended_next_action"])
 
-# 8. Frontend engineer gets different plan
+# 8. Escalation draft routing + content
+esc_resp = c.post(
+    f"/users/{uid}/escalation-draft",
+    json={
+        "blocker_id": blocker_body["id"],
+        "channel": "slack",
+        "what_tried": ["Checked GitHub invite email", "Verified org visibility in GitHub"],
+    },
+)
+assert esc_resp.status_code == 200, esc_resp.text
+esc = esc_resp.json()
+assert esc["recipient_team"] == "developer_productivity"
+assert esc["destination"] == "developer-productivity"
+assert "Help needed" in esc["draft_message"]
+print("Escalation draft routed to:", esc["recipient_owner"], "via", esc["destination"])
+
+# 9. Frontend engineer gets different plan
 resp7 = c.post("/users", json={
     "name": "Bob Frontend",
     "email": "bob@northstar.example",
@@ -100,7 +116,7 @@ print(f"Frontend engineer tasks ({len(tasks2)}):")
 for t in tasks2:
     print(f"  [{t['priority']}] {t['task_name']}")
 
-# 9. QA engineer gets fallback plan (no template for qa_engineer on payments)
+# 10. QA engineer gets fallback plan (no template for qa_engineer on payments)
 resp8 = c.post("/users", json={
     "name": "Carol QA",
     "email": "carol@northstar.example",

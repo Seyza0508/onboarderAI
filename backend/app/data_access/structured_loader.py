@@ -39,6 +39,13 @@ def get_blocker_playbooks() -> dict[str, dict]:
     return {entry["blocker_type"]: entry for entry in raw["blocker_categories"]}
 
 
+@lru_cache(maxsize=1)
+def get_contact_directory() -> dict[str, dict]:
+    """Return contact directory keyed by contact team."""
+    raw = _load_json("contact_directory.json")
+    return {entry["team"]: entry for entry in raw["contacts"]}
+
+
 def find_matching_templates(role: str, team: str) -> list[dict]:
     """Find all task templates that match the given role and team."""
     return [t for t in get_task_templates() if t["role"] == role and t["team"] == team]
