@@ -1,0 +1,22 @@
+{
+  "roles": [
+    {
+      "role": "backend_engineer",
+      "required_tools": ["github", "vpn", "internal_wiki", "docker", "postgres_client"],
+      "default_task_categories": ["access", "environment", "architecture", "delivery"],
+      "key_docs": ["backend_setup_guide.md", "payments_architecture_overview.md"]
+    },
+    {
+      "role": "frontend_engineer",
+      "required_tools": ["github", "vpn", "internal_wiki", "docker", "node", "pnpm"],
+      "default_task_categories": ["access", "environment", "architecture", "delivery"],
+      "key_docs": ["frontend_setup_guide.md", "payments_architecture_overview.md"]
+    },
+    {
+      "role": "qa_engineer",
+      "required_tools": ["github", "vpn", "internal_wiki", "docker", "test_dashboard"],
+      "default_task_categories": ["access", "quality", "environment", "delivery"],
+      "key_docs": ["engineering_onboarding_handbook.md", "troubleshooting_faq.md"]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "teams": [
+    {
+      "team": "payments",
+      "required_repositories": ["payments-api", "payments-worker", "payments-web"],
+      "required_channels": ["eng-onboarding", "payments-dev", "incident-updates"],
+      "must_read_docs": [
+        "payments_team_onboarding.md",
+        "payments_architecture_overview.md",
+        "incident_runbook.md"
+      ]
+    },
+    {
+      "team": "platform",
+      "required_repositories": ["dev-platform-config", "service-template", "infra-modules"],
+      "required_channels": ["eng-onboarding", "platform-dev", "incident-updates"],
+      "must_read_docs": [
+        "engineering_onboarding_handbook.md",
+        "incident_runbook.md"
+      ]
+    }
+  ]
+}

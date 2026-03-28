@@ -1,0 +1,83 @@
+{
+  "blocker_categories": [
+    {
+      "blocker_type": "access",
+      "detection_hints": [
+        "cannot access",
+        "no invite",
+        "permission denied",
+        "repo not visible"
+      ],
+      "why": "User lacks required account, permission, or identity mapping.",
+      "recommended_action": "Open access request and contact Developer Productivity with role, team, and start date.",
+      "alternate_tasks": [
+        "Read architecture docs",
+        "Review onboarding handbook",
+        "Complete security training"
+      ],
+      "default_escalation_team": "developer_productivity"
+    },
+    {
+      "blocker_type": "environment",
+      "detection_hints": [
+        "build failed",
+        "cannot run locally",
+        "docker not starting",
+        "dependency install failed"
+      ],
+      "why": "Local machine or runtime prerequisites are not correctly configured.",
+      "recommended_action": "Run setup checklist, verify tool versions, and collect logs before requesting help.",
+      "alternate_tasks": [
+        "Read troubleshooting FAQ",
+        "Review incident runbook",
+        "Pair with mentor on architecture walkthrough"
+      ],
+      "default_escalation_team": "payments_backend_enablement"
+    },
+    {
+      "blocker_type": "documentation",
+      "detection_hints": [
+        "docs are outdated",
+        "steps do not match",
+        "missing guide"
+      ],
+      "why": "Onboarding instructions are incomplete, stale, or inconsistent.",
+      "recommended_action": "Confirm correct doc version and request clarification in onboarding channel.",
+      "alternate_tasks": [
+        "Work on unrelated setup tasks",
+        "Capture doc gaps for follow-up PR"
+      ],
+      "default_escalation_team": "engineering_onboarding"
+    },
+    {
+      "blocker_type": "dependency",
+      "detection_hints": [
+        "waiting for approval",
+        "blocked by another team",
+        "pending request"
+      ],
+      "why": "Progress depends on an external approval or team action.",
+      "recommended_action": "Follow up with owner and include deadline impact.",
+      "alternate_tasks": [
+        "Complete independent learning tasks",
+        "Prepare first task context notes"
+      ],
+      "default_escalation_team": "engineering_onboarding"
+    },
+    {
+      "blocker_type": "ownership",
+      "detection_hints": [
+        "do not know who owns this",
+        "unclear owner",
+        "who should I ask"
+      ],
+      "why": "The responsible person or team is unclear.",
+      "recommended_action": "Use contact directory and escalate to onboarding coordinator if owner is still unknown.",
+      "alternate_tasks": [
+        "Continue non-dependent setup tasks",
+        "Document unanswered questions for mentor sync"
+      ],
+      "default_escalation_team": "engineering_onboarding"
+    }
+  ]
+}

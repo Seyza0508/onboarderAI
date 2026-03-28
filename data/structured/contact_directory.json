@@ -1,0 +1,32 @@
+{
+  "contacts": [
+    {
+      "team": "developer_productivity",
+      "owner_name": "Maya Brooks",
+      "slack_channel": "developer-productivity",
+      "email": "dev-productivity@northstar.example",
+      "owns": ["github_access", "repo_permissions", "developer_tools"]
+    },
+    {
+      "team": "it_network_ops",
+      "owner_name": "Liam Patel",
+      "slack_channel": "it-network-ops",
+      "email": "network-ops@northstar.example",
+      "owns": ["vpn_access", "internal_dns", "network_connectivity"]
+    },
+    {
+      "team": "payments_backend_enablement",
+      "owner_name": "Ari Kim",
+      "slack_channel": "payments-backend-help",
+      "email": "payments-backend@northstar.example",
+      "owns": ["backend_setup", "migrations", "local_runtime"]
+    },
+    {
+      "team": "engineering_onboarding",
+      "owner_name": "Nora Diaz",
+      "slack_channel": "eng-onboarding",
+      "email": "eng-onboarding@northstar.example",
+      "owns": ["onboarding_plans", "mentor_assignment", "new_hire_support"]
+    }
+  ]
+}

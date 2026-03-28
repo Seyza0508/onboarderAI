@@ -1,0 +1,81 @@
+{
+  "templates": [
+    {
+      "template_id": "payments_backend_day1_access",
+      "role": "backend_engineer",
+      "team": "payments",
+      "tasks": [
+        {
+          "task_name": "Activate VPN and verify internal wiki access",
+          "category": "access",
+          "priority": "high",
+          "depends_on_task_name": null,
+          "doc_reference": "vpn_setup_guide.md"
+        },
+        {
+          "task_name": "Get GitHub org invite and payments repo access",
+          "category": "access",
+          "priority": "high",
+          "depends_on_task_name": "Activate VPN and verify internal wiki access",
+          "doc_reference": "github_access_guide.md"
+        },
+        {
+          "task_name": "Read payments team onboarding overview",
+          "category": "architecture",
+          "priority": "medium",
+          "depends_on_task_name": null,
+          "doc_reference": "payments_team_onboarding.md"
+        },
+        {
+          "task_name": "Read payments architecture overview",
+          "category": "architecture",
+          "priority": "medium",
+          "depends_on_task_name": "Read payments team onboarding overview",
+          "doc_reference": "payments_architecture_overview.md"
+        },
+        {
+          "task_name": "Set up backend environment and run API locally",
+          "category": "environment",
+          "priority": "high",
+          "depends_on_task_name": "Get GitHub org invite and payments repo access",
+          "doc_reference": "backend_setup_guide.md"
+        }
+      ]
+    },
+    {
+      "template_id": "payments_frontend_day1_setup",
+      "role": "frontend_engineer",
+      "team": "payments",
+      "tasks": [
+        {
+          "task_name": "Activate VPN and verify internal wiki access",
+          "category": "access",
+          "priority": "high",
+          "depends_on_task_name": null,
+          "doc_reference": "vpn_setup_guide.md"
+        },
+        {
+          "task_name": "Get GitHub org invite and payments repo access",
+          "category": "access",
+          "priority": "high",
+          "depends_on_task_name": "Activate VPN and verify internal wiki access",
+          "doc_reference": "github_access_guide.md"
+        },
+        {
+          "task_name": "Set up frontend environment and run web app locally",
+          "category": "environment",
+          "priority": "high",
+          "depends_on_task_name": "Get GitHub org invite and payments repo access",
+          "doc_reference": "frontend_setup_guide.md"
+        },
+        {
+          "task_name": "Review payments architecture and UI integration points",
+          "category": "architecture",
+          "priority": "medium",
+          "depends_on_task_name": null,
+          "doc_reference": "payments_architecture_overview.md"
+        }
+      ]
+    }
+  ]
+}
