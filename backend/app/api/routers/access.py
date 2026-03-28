@@ -10,6 +10,18 @@ from app.db.schemas import UserAccessCreate, UserAccessRead
 router = APIRouter()
 
 
+@router.get("/users/{user_id}/access", response_model=list[UserAccessRead], status_code=status.HTTP_200_OK)
+def list_user_access(user_id: int, db: Session = Depends(get_db)) -> list[UserAccessStatus]:
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    rows = db.scalars(
+        select(UserAccessStatus).where(UserAccessStatus.user_id == user_id).order_by(UserAccessStatus.tool_name)
+    ).all()
+    return list(rows)
+
+
 @router.post("/users/{user_id}/access", response_model=UserAccessRead, status_code=status.HTTP_201_CREATED)
 def upsert_user_access(user_id: int, payload: UserAccessCreate, db: Session = Depends(get_db)) -> UserAccessStatus:
     user = db.get(User, user_id)

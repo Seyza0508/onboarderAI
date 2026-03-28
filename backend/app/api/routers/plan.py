@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.db.models import Interaction, Task, User
 from app.db.schemas import PlanGenerateResponse, TaskRead
+from app.services.plan_service import generate_tasks_for_user
 
 
 router = APIRouter()
@@ -17,41 +18,34 @@ def generate_plan(user_id: int, db: Session = Depends(get_db)) -> PlanGenerateRe
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     existing_tasks = db.scalars(select(Task).where(Task.user_id == user_id)).all()
-    generated = 0
 
-    if not existing_tasks:
-        starter_tasks = [
-            Task(
-                user_id=user_id,
-                task_name="Confirm core tool access for onboarding",
-                category="access",
-                status="not_started",
-                priority="high",
-                doc_reference="engineering_onboarding_handbook.md",
-            ),
-            Task(
-                user_id=user_id,
-                task_name="Review team onboarding documentation",
-                category="architecture",
-                status="not_started",
-                priority="medium",
-                doc_reference="payments_team_onboarding.md",
-            ),
-        ]
-        db.add_all(starter_tasks)
-        generated = len(starter_tasks)
+    if existing_tasks:
+        interaction = Interaction(
+            user_id=user_id,
+            interaction_type="plan",
+            user_message="Generate onboarding plan",
+            assistant_summary="Plan already exists; no new tasks generated",
+        )
+        db.add(interaction)
+        db.commit()
+        return PlanGenerateResponse(user_id=user_id, generated_task_count=0, message="Plan already exists for this user")
+
+    generated_tasks = generate_tasks_for_user(user, db)
 
     interaction = Interaction(
         user_id=user_id,
         interaction_type="plan",
         user_message="Generate onboarding plan",
-        assistant_summary="Generated initial onboarding task plan",
+        assistant_summary=f"Generated {len(generated_tasks)} personalized onboarding tasks for {user.role} on {user.team}",
     )
     db.add(interaction)
     db.commit()
 
-    message = "Plan generated with starter tasks" if generated else "Plan already exists for this user"
-    return PlanGenerateResponse(user_id=user_id, generated_task_count=generated, message=message)
+    return PlanGenerateResponse(
+        user_id=user_id,
+        generated_task_count=len(generated_tasks),
+        message=f"Generated personalized onboarding plan for {user.role} on {user.team}",
+    )
 
 
 @router.get("/users/{user_id}/plan", response_model=list[TaskRead], status_code=status.HTTP_200_OK)

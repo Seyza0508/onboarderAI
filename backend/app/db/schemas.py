@@ -36,6 +36,10 @@ class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserDetailRead(UserRead):
+    access_statuses: list["UserAccessRead"] = []
+
+
 class UserAccessCreate(BaseModel):
     tool_name: str
     status: AccessStatus
