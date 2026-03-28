@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.db.models import Interaction, User
 from app.db.schemas import ChatRequest, ChatResponse
+from app.rag.ingestion import build_index
+from app.services.chat_service import answer_onboarding_question
 
 
 router = APIRouter()
@@ -15,11 +17,9 @@ def chat_with_user(user_id: int, payload: ChatRequest, db: Session = Depends(get
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    response_text = (
-        f"Hi {user.name}, I logged your onboarding question and will use your role ({user.role}) and "
-        f"team ({user.team}) context to guide next actions."
-    )
-    sources = ["engineering_onboarding_handbook.md", "who_to_contact.md"]
+    # Ensure the retrieval index exists before answering.
+    build_index(force_rebuild=False)
+    response_text, sources = answer_onboarding_question(user=user, question=payload.message)
 
     interaction = Interaction(
         user_id=user_id,
