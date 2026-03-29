@@ -1,4 +1,4 @@
-import { ChatResult, Progress, Task, User, UserAccessPayload, UserCreatePayload } from "./types";
+import { Blocker, BlockerCreatePayload, ChatResult, Progress, Task, User, UserAccessPayload, UserCreatePayload } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
@@ -47,4 +47,11 @@ export async function getProgress(userId: number): Promise<Progress> {
 
 export async function getPlan(userId: number): Promise<Task[]> {
   return request<Task[]>(`/users/${userId}/plan`);
+}
+
+export async function createBlocker(userId: number, payload: BlockerCreatePayload): Promise<Blocker> {
+  return request<Blocker>(`/users/${userId}/blockers`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getPlan, getProgress } from "@/lib/api-client";
+import { createBlocker, getPlan, getProgress } from "@/lib/api-client";
 import { Progress, Task } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -11,6 +11,10 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [blockerDescription, setBlockerDescription] = useState("");
+  const [blockerSeverity, setBlockerSeverity] = useState<"low" | "medium" | "high" | "critical">("medium");
+  const [selectedTaskId, setSelectedTaskId] = useState<string>("");
+  const [blockerLoading, setBlockerLoading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("onboardai_user_id");
@@ -36,6 +40,41 @@ export default function DashboardPage() {
     }
   }
 
+  async function submitBlocker() {
+    if (!userId) {
+      setError("Enter a valid user ID.");
+      return;
+    }
+    if (!blockerDescription.trim()) {
+      setError("Enter a blocker description.");
+      return;
+    }
+
+    setBlockerLoading(true);
+    setError(null);
+    try {
+      const numericTaskId = Number(selectedTaskId);
+      const validTaskId =
+        selectedTaskId && Number.isInteger(numericTaskId) && tasks.some((task) => task.id === numericTaskId)
+          ? numericTaskId
+          : undefined;
+
+      await createBlocker(Number(userId), {
+        description: blockerDescription.trim(),
+        severity: blockerSeverity,
+        ...(validTaskId ? { task_id: validTaskId } : {}),
+      });
+
+      setBlockerDescription("");
+      setSelectedTaskId("");
+      await loadDashboard();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create blocker");
+    } finally {
+      setBlockerLoading(false);
+    }
+  }
+
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Progress Dashboard</h2>
@@ -51,6 +90,45 @@ export default function DashboardPage() {
       </div>
 
       {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+
+      <article className="card space-y-3">
+        <h3 className="font-semibold">Log blocker</h3>
+        <textarea
+          className="input min-h-24"
+          placeholder="Describe what is blocking you..."
+          value={blockerDescription}
+          onChange={(e) => setBlockerDescription(e.target.value)}
+        />
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium">Severity</label>
+            <select
+              className="input"
+              value={blockerSeverity}
+              onChange={(e) => setBlockerSeverity(e.target.value as "low" | "medium" | "high" | "critical")}
+            >
+              <option value="low">low</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+              <option value="critical">critical</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium">Related task (optional)</label>
+            <select className="input" value={selectedTaskId} onChange={(e) => setSelectedTaskId(e.target.value)}>
+              <option value="">No specific task</option>
+              {tasks.map((task) => (
+                <option key={task.id} value={task.id}>
+                  #{task.id} - {task.task_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <button className="button" onClick={submitBlocker} disabled={blockerLoading}>
+          {blockerLoading ? "Logging blocker..." : "Log Blocker"}
+        </button>
+      </article>
 
       {progress ? (
         <>

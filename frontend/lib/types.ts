@@ -46,6 +46,8 @@ export type Task = {
 
 export type Blocker = {
   id: number;
+  user_id?: number;
+  task_id?: number | null;
   blocker_type: string;
   description: string;
   severity: string;
@@ -64,4 +66,11 @@ export type Progress = {
   current_blocker: Blocker | null;
   recommended_next_action: string | null;
   recommended_alternate_tasks: string[];
+};
+
+export type BlockerCreatePayload = {
+  task_id?: number;
+  description: string;
+  severity: "low" | "medium" | "high" | "critical";
+  blocker_type?: "access" | "environment" | "documentation" | "dependency" | "ownership";
 };
