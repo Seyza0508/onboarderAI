@@ -137,15 +137,21 @@ def set_llm_config(
     db: Session = Depends(get_db),
     _: AuthContext = Depends(require_role("admin")),
 ) -> dict:
+    provider_name = payload.provider_name.strip().lower()
+    if provider_name not in {"mock", "openai", "anthropic"}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="provider_name must be one of: mock, openai, anthropic",
+        )
     if payload.is_default:
         default_rows = db.scalars(select(LlmProvider).where(LlmProvider.organization_id == org_id)).all()
         for row in default_rows:
             row.is_default = False
     provider = LlmProvider(
         organization_id=org_id,
-        provider_name=payload.provider_name,
-        model_name=payload.model_name,
-        api_key_encrypted=payload.api_key_encrypted,
+        provider_name=provider_name,
+        model_name=payload.model_name.strip(),
+        api_key_encrypted=(payload.api_key_encrypted.strip() if payload.api_key_encrypted else None),
         is_default=payload.is_default,
     )
     db.add(provider)

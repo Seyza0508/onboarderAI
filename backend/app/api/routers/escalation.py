@@ -39,30 +39,22 @@ def create_escalation_draft(
     if not blocker:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No blocker available to draft escalation")
 
+    provider = db.scalar(
+        select(LlmProvider).where(
+            LlmProvider.organization_id == ctx.organization_id,
+            LlmProvider.is_default.is_(True),
+        )
+    )
+
     draft = build_escalation_draft(
         user=user,
         blocker=blocker,
         channel=payload.channel,
         what_tried=payload.what_tried,
         help_needed=payload.help_needed,
-        provider_name=(
-            db.scalar(
-                select(LlmProvider.provider_name).where(
-                    LlmProvider.organization_id == ctx.organization_id,
-                    LlmProvider.is_default.is_(True),
-                )
-            )
-            or "mock"
-        ),
-        model_name=(
-            db.scalar(
-                select(LlmProvider.model_name).where(
-                    LlmProvider.organization_id == ctx.organization_id,
-                    LlmProvider.is_default.is_(True),
-                )
-            )
-            or "mock-v1"
-        ),
+        provider_name=provider.provider_name if provider else "mock",
+        model_name=provider.model_name if provider else "mock-v1",
+        api_key=provider.api_key_encrypted if provider else None,
     )
 
     interaction = Interaction(

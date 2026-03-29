@@ -11,7 +11,7 @@ Run:
 ```bash
 python backend/scripts/init_db.py
 python backend/scripts/ingest_docs.py
-uvicorn backend.app.main:app --reload
+python -m uvicorn app.main:app --reload --app-dir backend
 cd frontend
 npm install
 npm run dev

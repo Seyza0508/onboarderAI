@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-this-in-production"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 120
+    openai_api_key: str | None = None
+    anthropic_api_key: str | None = None
+    llm_request_timeout_seconds: float = 30.0
 
 
 settings = Settings()

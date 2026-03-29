@@ -23,6 +23,7 @@ def build_escalation_draft(
     help_needed: str | None = None,
     provider_name: str = "mock",
     model_name: str = "mock-v1",
+    api_key: str | None = None,
 ) -> EscalationDraftResult:
     contact = _resolve_contact(blocker.blocker_type)
     destination = contact["slack_channel"] if channel == "slack" else contact["email"]
@@ -57,7 +58,7 @@ def build_escalation_draft(
             "Thank you."
         )
 
-    llm = LlmClient(provider_name=provider_name, model_name=model_name)
+    llm = LlmClient(provider_name=provider_name, model_name=model_name, api_key=api_key)
     message = llm.generate(
         system_prompt="Polish the escalation message while preserving all facts and asks.",
         user_prompt=raw_message,

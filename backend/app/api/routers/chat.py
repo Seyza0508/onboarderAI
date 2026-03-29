@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -34,6 +34,7 @@ def chat_with_user(
         question=payload.message,
         provider_name=provider_name,
         model_name=model_name,
+        api_key=provider.api_key_encrypted if provider else None,
     )
 
     interaction = Interaction(

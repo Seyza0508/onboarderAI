@@ -113,7 +113,7 @@ docs/        Architecture, API contract, demo script
 python -m pip install -r backend/requirements.txt
 python backend/scripts/init_db.py
 python backend/scripts/ingest_docs.py
-uvicorn backend.app.main:app --reload
+python -m uvicorn app.main:app --reload --app-dir backend
 ```
 
 - API: `http://127.0.0.1:8000`

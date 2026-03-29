@@ -112,7 +112,11 @@ def explain_blocker(
     )
     provider_name = provider.provider_name if provider else "mock"
     model_name = provider.model_name if provider else "mock-v1"
-    llm = LlmClient(provider_name=provider_name, model_name=model_name)
+    llm = LlmClient(
+        provider_name=provider_name,
+        model_name=model_name,
+        api_key=provider.api_key_encrypted if provider else None,
+    )
     explanation = llm.generate(
         system_prompt="Explain blocker root cause and next action concisely.",
         user_prompt=(

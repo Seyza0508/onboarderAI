@@ -10,6 +10,7 @@ def answer_onboarding_question(
     question: str,
     provider_name: str = "mock",
     model_name: str = "mock-v1",
+    api_key: str | None = None,
 ) -> tuple[str, list[str], float, str]:
     retrieved = retrieve_chunks(question, top_k=4)
     confidence = _compute_confidence(retrieved)
@@ -38,7 +39,7 @@ def answer_onboarding_question(
         )
         return response, source_titles, confidence, "fallback_low_confidence"
 
-    llm = LlmClient(provider_name=provider_name, model_name=model_name)
+    llm = LlmClient(provider_name=provider_name, model_name=model_name, api_key=api_key)
     synthesized = llm.generate(system_prompt=system_prompt, user_prompt=user_prompt)
     return synthesized, source_titles, confidence, llm.model_name
 
