@@ -22,6 +22,7 @@ def generate_tasks_for_user(user: User, db: Session) -> list[Task]:
 
         for task_def in template["tasks"]:
             task = Task(
+                organization_id=user.organization_id,
                 user_id=user.id,
                 task_name=task_def["task_name"],
                 category=task_def["category"],
@@ -52,6 +53,7 @@ def _generate_fallback_tasks(user: User, db: Session) -> list[Task]:
     """Generic onboarding tasks when no matching template exists."""
     fallback = [
         Task(
+            organization_id=user.organization_id,
             user_id=user.id,
             task_name="Activate VPN and verify internal wiki access",
             category="access",
@@ -60,6 +62,7 @@ def _generate_fallback_tasks(user: User, db: Session) -> list[Task]:
             doc_reference="vpn_setup_guide.md",
         ),
         Task(
+            organization_id=user.organization_id,
             user_id=user.id,
             task_name="Review engineering onboarding handbook",
             category="architecture",
@@ -68,6 +71,7 @@ def _generate_fallback_tasks(user: User, db: Session) -> list[Task]:
             doc_reference="engineering_onboarding_handbook.md",
         ),
         Task(
+            organization_id=user.organization_id,
             user_id=user.id,
             task_name="Get GitHub organization access",
             category="access",

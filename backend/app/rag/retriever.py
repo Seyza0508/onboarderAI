@@ -8,6 +8,7 @@ from pathlib import Path
 from sklearn.metrics.pairwise import cosine_similarity
 
 from app.rag.ingestion import RAG_INDEX_PATH, build_index
+from app.rag.reranker import rerank_chunks
 
 
 @dataclass
@@ -63,4 +64,4 @@ def retrieve_chunks(query: str, top_k: int = 4) -> list[RetrievedChunk]:
             )
         )
 
-    return results
+    return rerank_chunks(results, query=query)[:top_k]

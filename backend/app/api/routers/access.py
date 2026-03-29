@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import AuthContext, get_auth_context, get_db, get_user_in_org
 from app.db.models import User, UserAccessStatus
 from app.db.schemas import UserAccessCreate, UserAccessRead
 
@@ -11,10 +11,12 @@ router = APIRouter()
 
 
 @router.get("/users/{user_id}/access", response_model=list[UserAccessRead], status_code=status.HTTP_200_OK)
-def list_user_access(user_id: int, db: Session = Depends(get_db)) -> list[UserAccessStatus]:
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+def list_user_access(
+    user_id: int,
+    db: Session = Depends(get_db),
+    ctx: AuthContext = Depends(get_auth_context),
+) -> list[UserAccessStatus]:
+    get_user_in_org(user_id=user_id, ctx=ctx, db=db)
 
     rows = db.scalars(
         select(UserAccessStatus).where(UserAccessStatus.user_id == user_id).order_by(UserAccessStatus.tool_name)
@@ -23,10 +25,13 @@ def list_user_access(user_id: int, db: Session = Depends(get_db)) -> list[UserAc
 
 
 @router.post("/users/{user_id}/access", response_model=UserAccessRead, status_code=status.HTTP_201_CREATED)
-def upsert_user_access(user_id: int, payload: UserAccessCreate, db: Session = Depends(get_db)) -> UserAccessStatus:
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+def upsert_user_access(
+    user_id: int,
+    payload: UserAccessCreate,
+    db: Session = Depends(get_db),
+    ctx: AuthContext = Depends(get_auth_context),
+) -> UserAccessStatus:
+    get_user_in_org(user_id=user_id, ctx=ctx, db=db)
 
     existing = db.scalar(
         select(UserAccessStatus).where(

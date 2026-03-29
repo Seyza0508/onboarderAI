@@ -15,6 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
             <h1 className="text-lg font-semibold">OnboardAI</h1>
             <nav className="flex gap-4 text-sm">
+              <Link href="/auth" className="hover:underline">
+                Auth
+              </Link>
               <Link href="/intake" className="hover:underline">
                 Intake
               </Link>
@@ -23,6 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Link>
               <Link href="/dashboard" className="hover:underline">
                 Dashboard
+              </Link>
+              <Link href="/manager" className="hover:underline">
+                Manager
               </Link>
             </nav>
           </div>

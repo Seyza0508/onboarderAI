@@ -15,24 +15,44 @@ from app.rag.ingestion import build_index
 def main() -> None:
     build_index(force_rebuild=True)
     client = TestClient(app)
+    suffix = int(time.time())
+
+    signup = client.post(
+        "/auth/signup",
+        json={
+            "name": "RAG Admin",
+            "email": f"rag.admin.{suffix}@northstar.example",
+            "password": "password123",
+            "organization_name": "Rag Org",
+            "organization_slug": f"rag-org-{suffix}",
+            "role": "admin",
+            "team": "platform",
+            "level": "senior",
+            "manager_name": "CTO",
+            "start_date": "2026-04-03",
+        },
+    )
+    assert signup.status_code == 201, signup.text
+    headers = {"Authorization": f"Bearer {signup.json()['access_token']}"}
 
     user_resp = client.post(
         "/users",
         json={
             "name": "Rag Tester",
-            "email": f"rag.tester.{int(time.time())}@northstar.example",
+            "email": f"rag.tester.{suffix}@northstar.example",
             "role": "backend_engineer",
             "team": "payments",
             "level": "mid",
             "manager_name": "Grace Hopper",
             "start_date": "2026-04-03",
         },
+        headers=headers,
     )
     assert user_resp.status_code == 201, user_resp.text
     user_id = user_resp.json()["id"]
 
     question = "I cannot access the repo and I need to know what to do next."
-    chat_resp = client.post(f"/users/{user_id}/chat", json={"message": question})
+    chat_resp = client.post(f"/users/{user_id}/chat", json={"message": question}, headers=headers)
     assert chat_resp.status_code == 200, chat_resp.text
     body = chat_resp.json()
     assert body["sources"], "Expected at least one source citation"

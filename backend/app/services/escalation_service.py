@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from app.data_access.structured_loader import get_blocker_playbooks, get_contact_directory
 from app.db.models import Blocker, User
+from app.llm.client import LlmClient
 
 
 @dataclass
@@ -20,6 +21,8 @@ def build_escalation_draft(
     channel: str,
     what_tried: list[str] | None = None,
     help_needed: str | None = None,
+    provider_name: str = "mock",
+    model_name: str = "mock-v1",
 ) -> EscalationDraftResult:
     contact = _resolve_contact(blocker.blocker_type)
     destination = contact["slack_channel"] if channel == "slack" else contact["email"]
@@ -32,7 +35,7 @@ def build_escalation_draft(
     requested_help = help_needed or blocker.recommended_action or "guidance on next steps and owner routing"
 
     if channel == "slack":
-        message = (
+        raw_message = (
             f"Hi @{contact['owner_name']}, I need help with an onboarding blocker.\n"
             f"- New hire: {user.name} ({user.role}, {user.team})\n"
             f"- Blocker type: {blocker.blocker_type}\n"
@@ -42,7 +45,7 @@ def build_escalation_draft(
             "Could you please advise on the next step or route me to the right owner?"
         )
     else:
-        message = (
+        raw_message = (
             f"Subject: Onboarding blocker escalation - {user.name} - {blocker.blocker_type}\n\n"
             f"Hello {contact['owner_name']},\n\n"
             f"I am {user.name} ({user.role} on {user.team}) and I am blocked during onboarding.\n\n"
@@ -53,6 +56,12 @@ def build_escalation_draft(
             "Please advise on resolution steps or redirect me to the correct owner.\n\n"
             "Thank you."
         )
+
+    llm = LlmClient(provider_name=provider_name, model_name=model_name)
+    message = llm.generate(
+        system_prompt="Polish the escalation message while preserving all facts and asks.",
+        user_prompt=raw_message,
+    )
 
     return EscalationDraftResult(
         recipient_team=contact["team"],

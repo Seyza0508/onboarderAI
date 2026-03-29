@@ -1,3 +1,33 @@
-from app.api.routers import access, blockers, chat, escalation, plan, progress, tasks, users
+from app.api.routers import (
+    access,
+    auth,
+    blockers,
+    chat,
+    escalation,
+    eval,
+    manager_dashboard,
+    organizations,
+    plan,
+    progress,
+    risk,
+    tasks,
+    users,
+    workflows,
+)
 
-__all__ = ["users", "access", "plan", "chat", "blockers", "tasks", "progress", "escalation"]
+__all__ = [
+    "users",
+    "access",
+    "plan",
+    "chat",
+    "blockers",
+    "tasks",
+    "progress",
+    "escalation",
+    "auth",
+    "organizations",
+    "workflows",
+    "manager_dashboard",
+    "risk",
+    "eval",
+]

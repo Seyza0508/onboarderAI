@@ -13,6 +13,9 @@ class Settings(BaseSettings):
 
     app_name: str = "OnboardAI API"
     database_url: str = Field(default=f"sqlite:///{DEFAULT_DATABASE_PATH.as_posix()}")
+    jwt_secret_key: str = "change-this-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 120
 
 
 settings = Settings()

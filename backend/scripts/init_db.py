@@ -7,6 +7,7 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.core.config import settings
+from sqlalchemy import create_engine, text
 
 
 def resolve_sqlite_path(database_url: str) -> Path:
@@ -16,17 +17,27 @@ def resolve_sqlite_path(database_url: str) -> Path:
 
 
 def main() -> None:
-    db_path = resolve_sqlite_path(settings.database_url)
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-
     migrations_path = BACKEND_ROOT / "migrations" / "001_init_schema.sql"
     sql_script = migrations_path.read_text(encoding="utf-8")
 
-    with sqlite3.connect(db_path) as connection:
-        connection.executescript(sql_script)
-        connection.commit()
+    if settings.database_url.startswith("sqlite:///"):
+        db_path = resolve_sqlite_path(settings.database_url)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(db_path) as connection:
+            connection.executescript(sql_script)
+            connection.commit()
+        print(f"Initialized SQLite schema at {db_path}")
+        return
 
-    print(f"Initialized SQLite schema at {db_path}")
+    engine = create_engine(settings.database_url)
+    statements = [stmt.strip() for stmt in sql_script.split(";") if stmt.strip()]
+    with engine.begin() as connection:
+        for statement in statements:
+            if statement.startswith("PRAGMA"):
+                continue
+            connection.execute(text(statement))
+
+    print("Initialized database schema for non-sqlite database")
 
 
 if __name__ == "__main__":

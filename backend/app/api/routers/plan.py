@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import AuthContext, get_auth_context, get_db, get_user_in_org
 from app.db.models import Interaction, Task, User
 from app.db.schemas import PlanGenerateResponse, TaskRead
 from app.services.plan_service import generate_tasks_for_user
@@ -12,15 +12,20 @@ router = APIRouter()
 
 
 @router.post("/users/{user_id}/plan/generate", response_model=PlanGenerateResponse, status_code=status.HTTP_200_OK)
-def generate_plan(user_id: int, db: Session = Depends(get_db)) -> PlanGenerateResponse:
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+def generate_plan(
+    user_id: int,
+    db: Session = Depends(get_db),
+    ctx: AuthContext = Depends(get_auth_context),
+) -> PlanGenerateResponse:
+    user = get_user_in_org(user_id=user_id, ctx=ctx, db=db)
 
-    existing_tasks = db.scalars(select(Task).where(Task.user_id == user_id)).all()
+    existing_tasks = db.scalars(
+        select(Task).where(Task.user_id == user_id, Task.organization_id == ctx.organization_id)
+    ).all()
 
     if existing_tasks:
         interaction = Interaction(
+            organization_id=ctx.organization_id,
             user_id=user_id,
             interaction_type="plan",
             user_message="Generate onboarding plan",
@@ -33,6 +38,7 @@ def generate_plan(user_id: int, db: Session = Depends(get_db)) -> PlanGenerateRe
     generated_tasks = generate_tasks_for_user(user, db)
 
     interaction = Interaction(
+        organization_id=ctx.organization_id,
         user_id=user_id,
         interaction_type="plan",
         user_message="Generate onboarding plan",
@@ -49,10 +55,16 @@ def generate_plan(user_id: int, db: Session = Depends(get_db)) -> PlanGenerateRe
 
 
 @router.get("/users/{user_id}/plan", response_model=list[TaskRead], status_code=status.HTTP_200_OK)
-def get_plan(user_id: int, db: Session = Depends(get_db)) -> list[Task]:
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+def get_plan(
+    user_id: int,
+    db: Session = Depends(get_db),
+    ctx: AuthContext = Depends(get_auth_context),
+) -> list[Task]:
+    get_user_in_org(user_id=user_id, ctx=ctx, db=db)
 
-    tasks = db.scalars(select(Task).where(Task.user_id == user_id).order_by(Task.created_at.asc())).all()
+    tasks = db.scalars(
+        select(Task)
+        .where(Task.user_id == user_id, Task.organization_id == ctx.organization_id)
+        .order_by(Task.created_at.asc())
+    ).all()
     return list(tasks)

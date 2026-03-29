@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
-from app.db.models import Blocker, Interaction, User
+from app.api.deps import AuthContext, get_auth_context, get_db, get_user_in_org
+from app.db.models import Blocker, Interaction, LlmProvider
 from app.db.schemas import EscalationDraftRequest, EscalationDraftResponse
 from app.services.escalation_service import build_escalation_draft
 
@@ -13,20 +13,27 @@ router = APIRouter()
 
 @router.post("/users/{user_id}/escalation-draft", response_model=EscalationDraftResponse, status_code=status.HTTP_200_OK)
 def create_escalation_draft(
-    user_id: int, payload: EscalationDraftRequest, db: Session = Depends(get_db)
+    user_id: int,
+    payload: EscalationDraftRequest,
+    db: Session = Depends(get_db),
+    ctx: AuthContext = Depends(get_auth_context),
 ) -> EscalationDraftResponse:
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user = get_user_in_org(user_id=user_id, ctx=ctx, db=db)
 
     blocker = None
     if payload.blocker_id is not None:
         blocker = db.get(Blocker, payload.blocker_id)
-        if not blocker or blocker.user_id != user_id:
+        if not blocker or blocker.user_id != user_id or blocker.organization_id != ctx.organization_id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Blocker not found for user")
     else:
         blocker = db.scalar(
-            select(Blocker).where(Blocker.user_id == user_id, Blocker.status != "resolved").order_by(Blocker.created_at.desc())
+            select(Blocker)
+            .where(
+                Blocker.user_id == user_id,
+                Blocker.organization_id == ctx.organization_id,
+                Blocker.status != "resolved",
+            )
+            .order_by(Blocker.created_at.desc())
         )
 
     if not blocker:
@@ -38,9 +45,28 @@ def create_escalation_draft(
         channel=payload.channel,
         what_tried=payload.what_tried,
         help_needed=payload.help_needed,
+        provider_name=(
+            db.scalar(
+                select(LlmProvider.provider_name).where(
+                    LlmProvider.organization_id == ctx.organization_id,
+                    LlmProvider.is_default.is_(True),
+                )
+            )
+            or "mock"
+        ),
+        model_name=(
+            db.scalar(
+                select(LlmProvider.model_name).where(
+                    LlmProvider.organization_id == ctx.organization_id,
+                    LlmProvider.is_default.is_(True),
+                )
+            )
+            or "mock-v1"
+        ),
     )
 
     interaction = Interaction(
+        organization_id=ctx.organization_id,
         user_id=user_id,
         interaction_type="escalation",
         user_message=f"Draft {payload.channel} escalation",

@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
-from app.db.models import Blocker, Task, User
+from app.api.deps import AuthContext, get_auth_context, get_db, get_user_in_org
+from app.db.models import Blocker, Task
 from app.db.schemas import BlockerRead, ProgressResponse
 from app.services.blocker_service import get_alternate_tasks_for_blocker_type
 
@@ -12,25 +12,39 @@ router = APIRouter()
 
 
 @router.get("/users/{user_id}/progress", response_model=ProgressResponse, status_code=status.HTTP_200_OK)
-def get_progress(user_id: int, db: Session = Depends(get_db)) -> ProgressResponse:
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+def get_progress(
+    user_id: int,
+    db: Session = Depends(get_db),
+    ctx: AuthContext = Depends(get_auth_context),
+) -> ProgressResponse:
+    get_user_in_org(user_id=user_id, ctx=ctx, db=db)
 
-    total_tasks = db.scalar(select(func.count(Task.id)).where(Task.user_id == user_id)) or 0
-    completed_tasks = db.scalar(
-        select(func.count(Task.id)).where(Task.user_id == user_id, Task.status == "complete")
+    total_tasks = db.scalar(
+        select(func.count(Task.id)).where(Task.user_id == user_id, Task.organization_id == ctx.organization_id)
     ) or 0
-    blocked_tasks = db.scalar(select(func.count(Task.id)).where(Task.user_id == user_id, Task.status == "blocked")) or 0
+    completed_tasks = db.scalar(
+        select(func.count(Task.id)).where(
+            Task.user_id == user_id, Task.organization_id == ctx.organization_id, Task.status == "complete"
+        )
+    ) or 0
+    blocked_tasks = db.scalar(
+        select(func.count(Task.id)).where(
+            Task.user_id == user_id, Task.organization_id == ctx.organization_id, Task.status == "blocked"
+        )
+    ) or 0
     open_blockers = db.scalar(
-        select(func.count(Blocker.id)).where(Blocker.user_id == user_id, Blocker.status != "resolved")
+        select(func.count(Blocker.id)).where(
+            Blocker.user_id == user_id,
+            Blocker.organization_id == ctx.organization_id,
+            Blocker.status != "resolved",
+        )
     ) or 0
     blocked_tasks = max(blocked_tasks, open_blockers)
     pending_tasks = max(total_tasks - completed_tasks - blocked_tasks, 0)
 
     current_blocker = db.scalar(
         select(Blocker)
-        .where(Blocker.user_id == user_id, Blocker.status != "resolved")
+        .where(Blocker.user_id == user_id, Blocker.organization_id == ctx.organization_id, Blocker.status != "resolved")
         .order_by(Blocker.created_at.desc())
     )
     recommended_next_action = current_blocker.recommended_action if current_blocker else None

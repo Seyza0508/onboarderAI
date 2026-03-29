@@ -18,6 +18,9 @@ export default function HomePage() {
         <Link className="button" href="/dashboard">
           View Dashboard
         </Link>
+        <Link className="button" href="/manager">
+          Manager View
+        </Link>
       </div>
     </section>
   );

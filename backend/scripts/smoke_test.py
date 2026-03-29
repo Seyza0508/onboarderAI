@@ -1,4 +1,5 @@
 import sys
+import time
 from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -10,6 +11,33 @@ from app.main import app
 
 c = TestClient(app)
 
+
+def auth_headers() -> dict[str, str]:
+    suffix = int(time.time())
+    signup = c.post(
+        "/auth/signup",
+        json={
+            "name": "Admin User",
+            "email": f"admin.{suffix}@northstar.example",
+            "password": "password123",
+            "organization_name": "Northstar",
+            "organization_slug": f"northstar-{suffix}",
+            "role": "admin",
+            "team": "platform",
+            "level": "senior",
+            "manager_name": "CTO",
+            "start_date": "2026-04-01",
+        },
+    )
+    assert signup.status_code == 201, signup.text
+    token = signup.json()["access_token"]
+    org_id = signup.json()["organization_id"]
+    user_id = signup.json()["user_id"]
+    return {"Authorization": f"Bearer {token}"}, org_id, user_id
+
+
+headers, org_id, _admin_user_id = auth_headers()
+
 # 1. Create user (backend_engineer on payments)
 resp = c.post("/users", json={
     "name": "Ada Lovelace",
@@ -19,7 +47,7 @@ resp = c.post("/users", json={
     "level": "mid",
     "manager_name": "Grace Hopper",
     "start_date": "2026-04-01",
-})
+}, headers=headers)
 assert resp.status_code == 201, resp.text
 user = resp.json()
 uid = user["id"]
@@ -27,23 +55,27 @@ print(f"Created user {uid}: {user['name']}, role={user['role']}, team={user['tea
 print(f"Auto-seeded access statuses: {[a['tool_name'] for a in user['access_statuses']]}")
 
 # 2. Update one access status
-resp2 = c.post(f"/users/{uid}/access", json={"tool_name": "github", "status": "pending", "notes": "invite sent"})
+resp2 = c.post(
+    f"/users/{uid}/access",
+    json={"tool_name": "github", "status": "pending", "notes": "invite sent"},
+    headers=headers,
+)
 assert resp2.status_code == 201, resp2.text
 print(f"Updated github access -> {resp2.json()['status']}")
 
 # 3. List access statuses
-resp3 = c.get(f"/users/{uid}/access")
+resp3 = c.get(f"/users/{uid}/access", headers=headers)
 assert resp3.status_code == 200
 print(f"Access list: {[(a['tool_name'], a['status']) for a in resp3.json()]}")
 
 # 4. Generate personalized plan
-resp4 = c.post(f"/users/{uid}/plan/generate")
+resp4 = c.post(f"/users/{uid}/plan/generate", headers=headers)
 assert resp4.status_code == 200, resp4.text
 plan_info = resp4.json()
 print(f"Plan: {plan_info['message']}, task_count={plan_info['generated_task_count']}")
 
 # 5. Get plan tasks with dependency info
-resp5 = c.get(f"/users/{uid}/plan")
+resp5 = c.get(f"/users/{uid}/plan", headers=headers)
 assert resp5.status_code == 200
 tasks = resp5.json()
 for t in tasks:
@@ -51,7 +83,7 @@ for t in tasks:
     print(f"  [{t['priority']}] {t['task_name']}  (dep={dep}, doc={t['doc_reference']})")
 
 # 6. Test idempotency
-resp6 = c.post(f"/users/{uid}/plan/generate")
+resp6 = c.post(f"/users/{uid}/plan/generate", headers=headers)
 assert resp6.json()["generated_task_count"] == 0
 print(f"Idempotent re-gen: {resp6.json()['message']}")
 
@@ -64,6 +96,7 @@ blocker_resp = c.post(
         "description": "I cannot access the payments repo and no invite has arrived yet.",
         "severity": "high",
     },
+    headers=headers,
 )
 assert blocker_resp.status_code == 201, blocker_resp.text
 blocker_body = blocker_resp.json()
@@ -76,7 +109,7 @@ print(
 print("Recommended action:", blocker_body["recommended_action"])
 print("Alternate tasks:", blocker_body["alternate_tasks"])
 
-progress_resp = c.get(f"/users/{uid}/progress")
+progress_resp = c.get(f"/users/{uid}/progress", headers=headers)
 assert progress_resp.status_code == 200, progress_resp.text
 progress = progress_resp.json()
 assert progress["recommended_next_action"], "Expected recommended_next_action in progress"
@@ -92,6 +125,7 @@ esc_resp = c.post(
         "channel": "slack",
         "what_tried": ["Checked GitHub invite email", "Verified org visibility in GitHub"],
     },
+    headers=headers,
 )
 assert esc_resp.status_code == 200, esc_resp.text
 esc = esc_resp.json()
@@ -109,10 +143,10 @@ resp7 = c.post("/users", json={
     "level": "junior",
     "manager_name": "Grace Hopper",
     "start_date": "2026-04-01",
-})
+}, headers=headers)
 uid2 = resp7.json()["id"]
-c.post(f"/users/{uid2}/plan/generate")
-tasks2 = c.get(f"/users/{uid2}/plan").json()
+c.post(f"/users/{uid2}/plan/generate", headers=headers)
+tasks2 = c.get(f"/users/{uid2}/plan", headers=headers).json()
 print(f"Frontend engineer tasks ({len(tasks2)}):")
 for t in tasks2:
     print(f"  [{t['priority']}] {t['task_name']}")
@@ -126,12 +160,17 @@ resp8 = c.post("/users", json={
     "level": "mid",
     "manager_name": "Grace Hopper",
     "start_date": "2026-04-01",
-})
+}, headers=headers)
 uid3 = resp8.json()["id"]
-c.post(f"/users/{uid3}/plan/generate")
-tasks3 = c.get(f"/users/{uid3}/plan").json()
+c.post(f"/users/{uid3}/plan/generate", headers=headers)
+tasks3 = c.get(f"/users/{uid3}/plan", headers=headers).json()
 print(f"QA engineer fallback tasks ({len(tasks3)}):")
 for t in tasks3:
     print(f"  [{t['priority']}] {t['task_name']}")
 
 print("\nAll smoke tests passed.")
+
+# 11. Validate org manager endpoints
+org_dash = c.get(f"/organizations/{org_id}/dashboard", headers=headers)
+assert org_dash.status_code == 200, org_dash.text
+print("Org dashboard:", org_dash.json())
