@@ -1,53 +1,113 @@
-# OnboardAI - Agentic Developer Onboarding Assistant
+# OnboardAI
+### Agentic Developer Onboarding Assistant
 
-OnboardAI is a portfolio project that demonstrates a practical, stateful, agentic AI system for engineering onboarding.
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.135-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-App_Router-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-It helps new hires move from "day 1 confusion" to productive onboarding by combining profile context, plan generation, retrieval-grounded answers, blocker intelligence, escalation drafting, and progress tracking.
+OnboardAI is a modern onboarding copilot that acts like a workflow agent, not just a chat bot.
 
-## Why this project is agentic
+It helps new hires move from day-1 confusion to productive ramp-up using org-aware context, grounded answers, blocker handling, escalation support, and manager-level visibility.
 
-The system runs an explicit onboarding loop:
+---
 
-1. **Context**: captures role, team, level, manager, start date, and access status.
-2. **Planning**: generates personalized onboarding tasks with dependencies.
-3. **Action + tool/data use**: retrieves from onboarding docs and structured playbooks.
-4. **Feedback**: records interactions, task status updates, and blockers.
-5. **Adaptation**: classifies blockers, recommends next-best action, proposes alternate tasks, and drafts escalations.
+## Key wins
 
-This is intentionally more than a one-shot chatbot.
+- Built a true agentic loop: plan, retrieve, decide, escalate, and track.
+- Added multi-tenant foundations: auth, organizations, role-aware access, scoped data.
+- Integrated provider-swappable LLM synthesis with grounded citation fallback.
+- Implemented explicit workflow execution with run and step observability.
+- Delivered manager-facing analytics with explainable onboarding risk scoring.
 
-## Core features (V1)
+---
 
-- New hire profile setup and persisted onboarding context
-- Personalized onboarding plan generation from role/team templates
-- RAG-based onboarding Q&A with source citations
-- Blocker detection and classification (`access`, `environment`, `documentation`, `dependency`, `ownership`)
-- Next-best-action recommendation and alternate productive tasks
-- Escalation draft generation with owner/team routing for Slack or email
-- Progress dashboard with task counts, current blocker, and recommended action
+## At a glance
+
+| Area | What it does |
+|---|---|
+| Auth + tenancy | Multi-user login, org/workspace isolation, role-aware access |
+| Onboarding engine | Personalized plans, access tracking, task dependencies |
+| Grounded AI | Retrieval + LLM synthesis with source citations and fallback |
+| Agent workflow | Explicit runs/steps for question, blocker, and onboarding flows |
+| Manager analytics | Team/org dashboard + explainable risk scoring |
+| Evaluation | Retrieval, classification, and recommendation quality endpoints |
+
+---
+
+## Why this is agentic (not just RAG)
+
+OnboardAI follows a stateful decision loop:
+
+1. **Load context**: user + org + role + onboarding state.
+2. **Plan**: generate structured tasks with dependencies.
+3. **Retrieve + synthesize**: ground responses in docs and compose answers.
+4. **Adapt**: detect blockers, classify type/severity, suggest next action.
+5. **Escalate**: draft routed messages to the right team/owner.
+6. **Orchestrate**: persist workflow runs and step outcomes.
+7. **Supervise**: manager dashboard + risk scoring over time.
+
+---
+
+## Architecture snapshot
+
+```mermaid
+flowchart LR
+    UI["Next.js UI<br/>Auth, Assistant, Dashboard, Manager"] --> API["FastAPI API Layer"]
+    API --> AUTH["Auth + Org RBAC"]
+    API --> WF["Workflow Runtime<br/>runs + steps + handoff"]
+    API --> SVC["Onboarding Services<br/>plan, blocker, escalation, risk"]
+    SVC --> RAG["Retrieval Pipeline<br/>ingest + retrieve + rerank"]
+    SVC --> LLM["LLM Provider Abstraction<br/>mock/openai/anthropic"]
+    API --> DB[("SQLite/Postgres<br/>org-scoped persistence")]
+    RAG --> DB
+    WF --> DB
+    SVC --> DB
+```
+
+---
+
+## Core capabilities
+
+- Org-aware authentication (`signup`, `login`) and scoped data access
+- Role/team-based onboarding plan generation
+- Grounded chat with citations and low-confidence fallback
+- Provider-swappable LLM abstraction (`mock`, `openai`, `anthropic`)
+- Blocker classification and explanation endpoints
+- Escalation drafting for Slack/email-style communication
+- Workflow runtime with run/step tracking and handoff endpoint
+- Manager dashboard with explainable risk factors
+- Evaluation suite for retrieval, classification, and recommendations
+
+---
 
 ## Tech stack
 
 - **Frontend**: Next.js (App Router), TypeScript, Tailwind CSS
-- **Backend**: Python, FastAPI, SQLAlchemy
-- **Agent/workflow design**: modular service layer + stateful persistence (LangGraph-ready architecture)
-- **RAG**: local ingestion + TF-IDF retrieval pipeline (embedding provider swappable)
-- **Database**: SQLite
-- **Storage**: local `storage/` artifacts (`app.db`, `rag_index.pkl`)
+- **Backend**: FastAPI, SQLAlchemy, Pydantic
+- **Workflow**: explicit node-based orchestration (LangGraph-compatible design)
+- **RAG**: TF-IDF retrieval + reranking
+- **LLM integration**: provider abstraction + deterministic fallback
+- **Persistence**: SQLite default, Postgres-ready via `DATABASE_URL`
+- **Artifacts**: `storage/app.db`, `storage/rag_index.pkl`
 
-## Repository layout
+---
+
+## Project structure
 
 ```text
-backend/     FastAPI API, DB models, services, RAG, scripts
-frontend/    Next.js UI for intake, assistant chat, dashboard
-data/        Structured and unstructured onboarding knowledge assets
-storage/     Runtime artifacts (SQLite DB, RAG index)
-docs/        Architecture notes, API contracts, demo script
+backend/     API, auth, org scoping, services, agent runtime, eval, scripts
+frontend/    Auth, intake, assistant, dashboard, manager views
+data/        Structured + unstructured onboarding knowledge
+storage/     Runtime artifacts (DB + retrieval index)
+docs/        Architecture, API contract, demo script
 ```
+
+---
 
 ## Quick start
 
-## 1) Backend setup
+### Backend
 
 ```bash
 python -m pip install -r backend/requirements.txt
@@ -56,9 +116,16 @@ python backend/scripts/ingest_docs.py
 uvicorn backend.app.main:app --reload
 ```
 
-Backend endpoints will be available at `http://127.0.0.1:8000`, docs at `http://127.0.0.1:8000/docs`.
+- API: `http://127.0.0.1:8000`
+- Docs: `http://127.0.0.1:8000/docs`
 
-## 2) Frontend setup
+`backend/.env.example` includes DB and JWT settings:
+- `DATABASE_URL`
+- `JWT_SECRET_KEY`
+- `JWT_ALGORITHM`
+- `ACCESS_TOKEN_EXPIRE_MINUTES`
+
+### Frontend
 
 ```bash
 cd frontend
@@ -66,13 +133,11 @@ npm install
 npm run dev
 ```
 
-Frontend will run at `http://localhost:3000`.
+- App: `http://localhost:3000`
 
-Use `frontend/.env.example` to override API URL if needed.
+---
 
-## Testing and smoke checks
-
-Run from repo root:
+## Smoke tests
 
 ```bash
 python backend/scripts/init_db.py
@@ -81,56 +146,83 @@ python backend/scripts/smoke_test.py
 python backend/scripts/rag_smoke_test.py
 ```
 
-These scripts validate:
+Coverage includes:
+- auth/org bootstrap
+- scoped onboarding flows
+- blocker + escalation path
+- grounded chat path
+- manager dashboard endpoints
 
-- profile and access flows
-- personalized plan generation
-- blocker classification and progress recommendations
-- escalation routing and draft generation
-- retrieval-grounded chat with sources
+---
 
-## API highlights
+## API surface (highlights)
 
-Implemented endpoints:
+### Auth and organizations
+- `POST /auth/signup`
+- `POST /auth/login`
+- `POST /organizations`
+- `GET /organizations/{org_id}`
+- `POST /organizations/{org_id}/members`
+- `GET /organizations/{org_id}/members`
+- `POST /organizations/{org_id}/teams`
+- `GET /organizations/{org_id}/teams`
+- `POST /organizations/{org_id}/llm/config`
+- `GET /organizations/{org_id}/llm/config`
 
+### Onboarding and blocker handling
 - `POST /users`
+- `GET /users/{user_id}`
 - `POST /users/{user_id}/access`
 - `GET /users/{user_id}/access`
-- `GET /users/{user_id}`
 - `POST /users/{user_id}/plan/generate`
 - `GET /users/{user_id}/plan`
 - `POST /users/{user_id}/chat`
+- `POST /users/{user_id}/chat/answer`
 - `POST /users/{user_id}/blockers`
-- `PATCH /tasks/{task_id}`
-- `GET /users/{user_id}/progress`
+- `POST /users/{user_id}/blockers/{blocker_id}/explain`
 - `POST /users/{user_id}/escalation-draft`
+- `GET /users/{user_id}/progress`
+- `PATCH /tasks/{task_id}`
 
-## Demo story (short version)
+### Workflow runtime
+- `POST /users/{user_id}/workflows/onboarding-run`
+- `POST /users/{user_id}/workflows/question-run`
+- `POST /users/{user_id}/workflows/blocker-run`
+- `GET /workflows/{run_id}`
+- `POST /workflows/{run_id}/handoff`
 
-1. Create a backend engineer profile on the payments team.
-2. Auto-seed access status and generate role/team-specific onboarding plan.
-3. Ask onboarding questions in chat and review cited sources.
-4. Log an access blocker; system classifies it and recommends next action.
-5. Generate a routed Slack escalation draft to the right owner.
-6. Open dashboard to show progress metrics and alternate tasks while blocked.
+### Manager and evaluation
+- `GET /organizations/{org_id}/dashboard`
+- `GET /organizations/{org_id}/dashboard/blockers`
+- `GET /teams/{team_id}/dashboard`
+- `GET /users/{user_id}/risk`
+- `POST /users/{user_id}/risk/recompute`
+- `POST /eval/retrieval/run`
+- `POST /eval/classification/run`
+- `POST /eval/recommendation/run`
+- `GET /eval/summary`
 
-## V1 vs future upgrades
+---
 
-### In V1 now
+## Demo flow (5-8 minutes)
 
-- single-user local deployment
-- SQLite persistence
-- retrieval with local vectorization and source-backed responses
-- deterministic blocker/escalation logic from structured playbooks
+1. Sign up as admin and create org context.
+2. Create a new hire and generate onboarding plan.
+3. Ask questions and show grounded, cited responses.
+4. Log a blocker and show explanation + next action.
+5. Generate escalation draft.
+6. Run a workflow endpoint and inspect step logs.
+7. Open manager dashboard and risk output.
 
-### Good V2 extensions
+---
 
-- provider-swappable LLM answer synthesis
-- Postgres + auth + multi-tenant org support
-- LangGraph orchestration for explicit graph nodes/retries/handoff
-- manager-level dashboard and onboarding risk scoring
+## Notes
 
-## Documentation
+- Local setup defaults to SQLite for speed.
+- Postgres is enabled through `DATABASE_URL`.
+- `mock` LLM provider is default for deterministic local demos.
+
+## Docs
 
 - `docs/architecture.md`
 - `docs/api_contract.md`
