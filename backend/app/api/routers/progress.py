@@ -22,6 +22,10 @@ def get_progress(user_id: int, db: Session = Depends(get_db)) -> ProgressRespons
         select(func.count(Task.id)).where(Task.user_id == user_id, Task.status == "complete")
     ) or 0
     blocked_tasks = db.scalar(select(func.count(Task.id)).where(Task.user_id == user_id, Task.status == "blocked")) or 0
+    open_blockers = db.scalar(
+        select(func.count(Blocker.id)).where(Blocker.user_id == user_id, Blocker.status != "resolved")
+    ) or 0
+    blocked_tasks = max(blocked_tasks, open_blockers)
     pending_tasks = max(total_tasks - completed_tasks - blocked_tasks, 0)
 
     current_blocker = db.scalar(

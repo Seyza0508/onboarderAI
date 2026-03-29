@@ -81,6 +81,7 @@ assert progress_resp.status_code == 200, progress_resp.text
 progress = progress_resp.json()
 assert progress["recommended_next_action"], "Expected recommended_next_action in progress"
 assert progress["recommended_alternate_tasks"], "Expected alternate tasks in progress"
+assert progress["blocked_tasks"] >= 1, "Expected blocked count to increase after blocker creation"
 print("Progress recommendation:", progress["recommended_next_action"])
 
 # 8. Escalation draft routing + content

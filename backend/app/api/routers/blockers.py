@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -16,11 +17,21 @@ def create_blocker(user_id: int, payload: BlockerCreate, db: Session = Depends(g
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    if payload.task_id is not None:
-        task = db.get(Task, payload.task_id)
+    linked_task_id: int | None = payload.task_id
+    if linked_task_id is not None:
+        task = db.get(Task, linked_task_id)
         if not task or task.user_id != user_id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found for user")
         task.status = "blocked"
+    else:
+        fallback_task = db.scalar(
+            select(Task)
+            .where(Task.user_id == user_id, Task.status.in_(("not_started", "in_progress")))
+            .order_by(Task.created_at.asc())
+        )
+        if fallback_task:
+            fallback_task.status = "blocked"
+            linked_task_id = fallback_task.id
 
     decision = classify_blocker(
         description=payload.description,
@@ -32,7 +43,7 @@ def create_blocker(user_id: int, payload: BlockerCreate, db: Session = Depends(g
 
     blocker = Blocker(
         user_id=user_id,
-        task_id=payload.task_id,
+        task_id=linked_task_id,
         blocker_type=decision.blocker_type,
         description=payload.description,
         severity=payload.severity,
